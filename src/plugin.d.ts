@@ -11,6 +11,7 @@ declare namespace tailwind3Scale {
         viewportFontSizeVar?: string;
         includeClamp?: boolean;
         scopeSelector?: string | null;
+        scaleCoreUtilities?: boolean;
     }
 }
 

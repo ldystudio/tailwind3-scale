@@ -1,6 +1,6 @@
 {
   "name": "tailwind3-scale",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Tailwind CSS v3 移动端适配插件，基于设计稿像素的等比缩放方案，兼容 iOS 13",
   "keywords": [
     "tailwindcss",
@@ -37,10 +37,10 @@
   "scripts": {
     "build": "rm -rf dist && rolldown -c && bun scripts/copy-types.ts",
     "test": "bun test",
-    "lint": "biome check .",
-    "lint:fix": "biome check --write .",
+    "lint": "biome lint --write .",
+    "check": "biome check --write .",
     "format": "biome format --write .",
-    "prepublishOnly": "bun format && bun test && bun run build"
+    "prepublishOnly": "bun check && bun test && bun run build"
   },
   "peerDependencies": {
     "tailwindcss": ">=3.0.0 <4.0.0"

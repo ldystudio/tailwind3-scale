@@ -147,6 +147,7 @@ module.exports = {
 | `viewportFontSizeVar` | `--tw-viewport-font-size` | 视口根字号 CSS 变量名                          |
 | `includeClamp`        | `true`                    | 是否为支持的浏览器生成 `clamp()` 限制          |
 | `scopeSelector`       | `null`                    | 局部启用选择器；设置后不再覆盖全局 `html` 字号 |
+| `scaleCoreUtilities` | `false` | 是否让 Tailwind 默认 `size-7` / `text-base` / `rounded-lg` 等 token 也跟随缩放 |
 
 ### 局部启用
 
@@ -156,6 +157,7 @@ module.exports = {
 plugins: [
   require("tailwind3-scale")({
     scopeSelector: ".tw-scale-scope",
+    scaleCoreUtilities: true,
   }),
 ]
 ```
@@ -169,6 +171,17 @@ plugins: [
 ```
 
 局部模式下 `--tw-scale` 会在该 scope 内按视口宽度生成长度变量，所以不会依赖全局 `html` 的 `font-size`。
+
+如果开启 `scaleCoreUtilities`，Tailwind 默认 spacing、fontSize、borderRadius、borderWidth token 会改成带 fallback 的变量表达式：
+
+```css
+.size-7 {
+  width: calc(var(--tw-scale, 0.0625rem) * 28);
+  height: calc(var(--tw-scale, 0.0625rem) * 28);
+}
+```
+
+在 `.tw-scale-scope` 内会使用响应式 `--tw-scale`；scope 外没有该变量时会回退到原始 Tailwind rem 表现，所以不会强制影响其他页面。
 
 ## 许可证
 

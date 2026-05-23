@@ -10,6 +10,81 @@ const defaultOptions = {
     viewportFontSizeVar: "--tw-viewport-font-size",
     includeClamp: true,
     scopeSelector: null,
+    scaleCoreUtilities: false,
+};
+
+const defaultSpacing = {
+    0: 0,
+    px: 1,
+    0.5: 2,
+    1: 4,
+    1.5: 6,
+    2: 8,
+    2.5: 10,
+    3: 12,
+    3.5: 14,
+    4: 16,
+    5: 20,
+    6: 24,
+    7: 28,
+    8: 32,
+    9: 36,
+    10: 40,
+    11: 44,
+    12: 48,
+    14: 56,
+    16: 64,
+    20: 80,
+    24: 96,
+    28: 112,
+    32: 128,
+    36: 144,
+    40: 160,
+    44: 176,
+    48: 192,
+    52: 208,
+    56: 224,
+    60: 240,
+    64: 256,
+    72: 288,
+    80: 320,
+    96: 384,
+};
+
+const defaultFontSize = {
+    xs: [12, 16],
+    sm: [14, 20],
+    base: [16, 24],
+    lg: [18, 28],
+    xl: [20, 28],
+    "2xl": [24, 32],
+    "3xl": [30, 36],
+    "4xl": [36, 40],
+    "5xl": [48, null],
+    "6xl": [60, null],
+    "7xl": [72, null],
+    "8xl": [96, null],
+    "9xl": [128, null],
+};
+
+const defaultBorderRadius = {
+    none: 0,
+    sm: 2,
+    DEFAULT: 4,
+    md: 6,
+    lg: 8,
+    xl: 12,
+    "2xl": 16,
+    "3xl": 24,
+    full: null,
+};
+
+const defaultBorderWidth = {
+    DEFAULT: 1,
+    0: 0,
+    2: 2,
+    4: 4,
+    8: 8,
 };
 
 function round(value) {
@@ -29,10 +104,174 @@ function scaled(value, cssVar) {
     return `calc(var(${cssVar}) * ${value})`;
 }
 
+function scaledCore(value, cssVar) {
+    if (value === 0) return "0";
+    return `calc(var(${cssVar}, 0.0625rem) * ${value})`;
+}
+
+function className(value) {
+    return String(value).replaceAll(".", "\\.");
+}
+
+function directionalUtility(prefix, property, key, value, utilities, options = {}) {
+    const suffix = key === "DEFAULT" ? "" : `-${className(key)}`;
+    utilities[`.${prefix}${suffix}`] = { [property]: value };
+    if (options.negative && value !== "0") {
+        utilities[`.-${prefix}${suffix}`] = { [property]: `calc(${value} * -1)` };
+    }
+}
+
+function createCoreUtilities(config) {
+    if (!config.scaleCoreUtilities) return {};
+
+    const utilities = {};
+    const spacingMappings = [
+        ["w", "width"],
+        ["h", "height"],
+        ["min-w", "minWidth"],
+        ["max-w", "maxWidth"],
+        ["min-h", "minHeight"],
+        ["max-h", "maxHeight"],
+        ["p", "padding"],
+        ["pt", "paddingTop"],
+        ["pr", "paddingRight"],
+        ["pb", "paddingBottom"],
+        ["pl", "paddingLeft"],
+        ["gap", "gap"],
+        ["gap-x", "columnGap"],
+        ["gap-y", "rowGap"],
+        ["top", "top"],
+        ["right", "right"],
+        ["bottom", "bottom"],
+        ["left", "left"],
+        ["inset", "inset"],
+    ];
+    const negativeSpacingMappings = [
+        ["m", "margin"],
+        ["mt", "marginTop"],
+        ["mr", "marginRight"],
+        ["mb", "marginBottom"],
+        ["ml", "marginLeft"],
+    ];
+
+    for (const [key, rawValue] of Object.entries(defaultSpacing)) {
+        const value = scaledCore(rawValue, config.cssVar);
+        const suffix = className(key);
+        utilities[`.size-${suffix}`] = { width: value, height: value };
+        utilities[`.px-${suffix}`] = { paddingLeft: value, paddingRight: value };
+        utilities[`.py-${suffix}`] = { paddingTop: value, paddingBottom: value };
+        utilities[`.mx-${suffix}`] = { marginLeft: value, marginRight: value };
+        utilities[`.my-${suffix}`] = { marginTop: value, marginBottom: value };
+        utilities[`.inset-x-${suffix}`] = { left: value, right: value };
+        utilities[`.inset-y-${suffix}`] = { top: value, bottom: value };
+
+        if (value !== "0") {
+            utilities[`.-mx-${suffix}`] = {
+                marginLeft: `calc(${value} * -1)`,
+                marginRight: `calc(${value} * -1)`,
+            };
+            utilities[`.-my-${suffix}`] = {
+                marginTop: `calc(${value} * -1)`,
+                marginBottom: `calc(${value} * -1)`,
+            };
+            utilities[`.-inset-x-${suffix}`] = {
+                left: `calc(${value} * -1)`,
+                right: `calc(${value} * -1)`,
+            };
+            utilities[`.-inset-y-${suffix}`] = {
+                top: `calc(${value} * -1)`,
+                bottom: `calc(${value} * -1)`,
+            };
+        }
+
+        for (const [prefix, property] of spacingMappings) {
+            directionalUtility(prefix, property, key, value, utilities, {
+                negative: ["top", "right", "bottom", "left", "inset"].includes(prefix),
+            });
+        }
+        for (const [prefix, property] of negativeSpacingMappings) {
+            directionalUtility(prefix, property, key, value, utilities, { negative: true });
+        }
+    }
+
+    for (const [key, [size, lineHeight]] of Object.entries(defaultFontSize)) {
+        utilities[`.text-${className(key)}`] = {
+            fontSize: scaledCore(size, config.cssVar),
+            ...(lineHeight === null ? { lineHeight: "1" } : { lineHeight: scaledCore(lineHeight, config.cssVar) }),
+        };
+    }
+
+    for (const [key, rawValue] of Object.entries(defaultBorderRadius)) {
+        const suffix = key === "DEFAULT" ? "" : `-${className(key)}`;
+        const value = rawValue === null ? "9999px" : scaledCore(rawValue, config.cssVar);
+        utilities[`.rounded${suffix}`] = { borderRadius: value };
+        utilities[`.rounded-l${suffix}`] = {
+            borderTopLeftRadius: value,
+            borderBottomLeftRadius: value,
+        };
+        utilities[`.rounded-r${suffix}`] = {
+            borderTopRightRadius: value,
+            borderBottomRightRadius: value,
+        };
+    }
+
+    for (const [key, rawValue] of Object.entries(defaultBorderWidth)) {
+        const suffix = key === "DEFAULT" ? "" : `-${className(key)}`;
+        const value = scaledCore(rawValue, config.cssVar);
+        utilities[`.border${suffix}`] = { borderWidth: value };
+        utilities[`.border-t${suffix}`] = { borderTopWidth: value };
+        utilities[`.border-r${suffix}`] = { borderRightWidth: value };
+        utilities[`.border-b${suffix}`] = { borderBottomWidth: value };
+        utilities[`.border-l${suffix}`] = { borderLeftWidth: value };
+    }
+
+    return utilities;
+}
+
 function scaleValue(config) {
     const ratio = round(1 / config.rootFontSize);
     if (!config.scopeSelector) return `${ratio}rem`;
     return `calc(var(${config.viewportFontSizeVar}) * ${ratio})`;
+}
+
+function createCoreTheme(options = {}) {
+    const config = { ...defaultOptions, ...options };
+    if (!config.scaleCoreUtilities) return {};
+
+    const spacing = Object.fromEntries(
+        Object.entries(defaultSpacing).map(([key, value]) => [key, scaledCore(value, config.cssVar)])
+    );
+
+    const fontSize = Object.fromEntries(
+        Object.entries(defaultFontSize).map(([key, [size, lineHeight]]) => [
+            key,
+            lineHeight === null
+                ? [scaledCore(size, config.cssVar), { lineHeight: "1" }]
+                : [scaledCore(size, config.cssVar), { lineHeight: scaledCore(lineHeight, config.cssVar) }],
+        ])
+    );
+
+    const borderRadius = Object.fromEntries(
+        Object.entries(defaultBorderRadius).map(([key, value]) => [
+            key,
+            value === null ? "9999px" : scaledCore(value, config.cssVar),
+        ])
+    );
+
+    const borderWidth = Object.fromEntries(
+        Object.entries(defaultBorderWidth).map(([key, value]) => [key, scaledCore(value, config.cssVar)])
+    );
+
+    return {
+        theme: {
+            extend: {
+                spacing,
+                fontSize,
+                borderRadius,
+                borderWidth,
+            },
+        },
+    };
 }
 
 function clampedScaleValue(config) {
@@ -86,6 +325,8 @@ function createHandler(options = {}) {
         }
 
         addBase(baseStyles);
+
+        addUtilities(createCoreUtilities(config));
 
         matchUtilities(
             {
@@ -189,4 +430,4 @@ function createHandler(options = {}) {
     };
 }
 
-module.exports = plugin.withOptions((options = {}) => createHandler(options));
+module.exports = plugin.withOptions((options = {}) => createHandler(options), createCoreTheme);

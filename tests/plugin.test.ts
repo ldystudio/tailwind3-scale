@@ -81,4 +81,22 @@ describe("tailwind3Scale plugin", () => {
         expect(css).toContain("font-size: var(--tw-viewport-font-size)");
         expect(css).not.toContain("html {");
     });
+
+    test("可选支持 Tailwind 默认 spacing 和 fontSize 跟随 scale", async () => {
+        const css = await buildCss(
+            "tw-scale-scope size-7 text-base rounded-lg border-2",
+            tailwind3Scale({
+                rootFontSize: 12,
+                scopeSelector: ".tw-scale-scope",
+                scaleCoreUtilities: true,
+            })
+        );
+
+        expect(css).toContain("width: calc(var(--tw-scale, 0.0625rem) * 28)");
+        expect(css).toContain("height: calc(var(--tw-scale, 0.0625rem) * 28)");
+        expect(css).toContain("font-size: calc(var(--tw-scale, 0.0625rem) * 16)");
+        expect(css).toContain("line-height: calc(var(--tw-scale, 0.0625rem) * 24)");
+        expect(css).toContain("border-radius: calc(var(--tw-scale, 0.0625rem) * 8)");
+        expect(css).toContain("border-width: calc(var(--tw-scale, 0.0625rem) * 2)");
+    });
 });
