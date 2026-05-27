@@ -5,7 +5,7 @@ const defaultOptions = {
     minWidth: 320,
     maxWidth: 480,
     rootFontSize: 16,
-    max: 1000,
+    max: 812,
     cssVar: "--tw-scale",
     viewportFontSizeVar: "--tw-viewport-font-size",
     includeClamp: true,
@@ -106,7 +106,7 @@ function scaled(value, cssVar) {
 
 function scaledCore(value, cssVar) {
     if (value === 0) return "0";
-    return `calc(var(${cssVar}, 0.0625rem) * ${value})`;
+    return `calc(var(${cssVar}) * ${value})`;
 }
 
 function className(value) {
@@ -117,7 +117,7 @@ function directionalUtility(prefix, property, key, value, utilities, options = {
     const suffix = key === "DEFAULT" ? "" : `-${className(key)}`;
     utilities[`.${prefix}${suffix}`] = { [property]: value };
     if (options.negative && value !== "0") {
-        utilities[`.-${prefix}${suffix}`] = { [property]: `calc(${value} * -1)` };
+        utilities[`.-${prefix}${suffix}`] = { [property]: options.negativeValue || `calc(${value} * -1)` };
     }
 }
 
@@ -156,6 +156,7 @@ function createCoreUtilities(config) {
 
     for (const [key, rawValue] of Object.entries(defaultSpacing)) {
         const value = scaledCore(rawValue, config.cssVar);
+        const negativeValue = scaledCore(-rawValue, config.cssVar);
         const suffix = className(key);
         utilities[`.size-${suffix}`] = { width: value, height: value };
         utilities[`.px-${suffix}`] = { paddingLeft: value, paddingRight: value };
@@ -167,30 +168,31 @@ function createCoreUtilities(config) {
 
         if (value !== "0") {
             utilities[`.-mx-${suffix}`] = {
-                marginLeft: `calc(${value} * -1)`,
-                marginRight: `calc(${value} * -1)`,
+                marginLeft: negativeValue,
+                marginRight: negativeValue,
             };
             utilities[`.-my-${suffix}`] = {
-                marginTop: `calc(${value} * -1)`,
-                marginBottom: `calc(${value} * -1)`,
+                marginTop: negativeValue,
+                marginBottom: negativeValue,
             };
             utilities[`.-inset-x-${suffix}`] = {
-                left: `calc(${value} * -1)`,
-                right: `calc(${value} * -1)`,
+                left: negativeValue,
+                right: negativeValue,
             };
             utilities[`.-inset-y-${suffix}`] = {
-                top: `calc(${value} * -1)`,
-                bottom: `calc(${value} * -1)`,
+                top: negativeValue,
+                bottom: negativeValue,
             };
         }
 
         for (const [prefix, property] of spacingMappings) {
             directionalUtility(prefix, property, key, value, utilities, {
                 negative: ["top", "right", "bottom", "left", "inset"].includes(prefix),
+                negativeValue,
             });
         }
         for (const [prefix, property] of negativeSpacingMappings) {
-            directionalUtility(prefix, property, key, value, utilities, { negative: true });
+            directionalUtility(prefix, property, key, value, utilities, { negative: true, negativeValue });
         }
     }
 
@@ -300,7 +302,7 @@ function createHandler(options = {}) {
     const scaleSelector = config.scopeSelector || ":root";
     const fontSizeSelector = config.scopeSelector || "html";
 
-    return ({ addBase, addUtilities, matchUtilities }) => {
+    return ({ addBase, addUtilities, matchUtilities, postcss }) => {
         const baseStyles = {
             [scaleSelector]: {
                 [config.cssVar]: scaleValue(config),
@@ -326,7 +328,9 @@ function createHandler(options = {}) {
 
         addBase(baseStyles);
 
-        addUtilities(createCoreUtilities(config));
+        if (postcss === null) {
+            addUtilities(createCoreUtilities(config));
+        }
 
         matchUtilities(
             {

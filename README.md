@@ -44,10 +44,10 @@ module.exports = {
 ```js
 const { scale } = require("tailwind3-scale/js");
 
-scale(100); // "calc(100 * var(--tw-scale))"
-scale(-20); // "calc(-20 * var(--tw-scale))"
+scale(100); // "calc(var(--tw-scale) * 100)"
+scale(-20); // "calc(var(--tw-scale) * -20)"
 scale(0); // "0"
-scale(100, "--my-scale"); // "calc(100 * var(--my-scale))"
+scale(100, "--my-scale"); // "calc(var(--my-scale) * 100)"
 ```
 
 ESM 也支持：
@@ -95,11 +95,13 @@ import { scale } from "tailwind3-scale/js";
 
 ### 任意值支持
 
-默认会生成 `0..1000` 范围内的裸数字类名。范围外或小数可以使用 Tailwind v3 任意值语法：
+默认会生成 `0..812` 范围内的裸数字类名。范围外或小数可以使用 Tailwind v3 任意值语法：
 
 ```html
 <div class="w-s-[137] text-s-[13.5]"></div>
 ```
+
+任意值只接受“设计稿像素数字”，不要带单位。使用 `w-s-[10px]` 会生成无效语义的 `calc(var(--tw-scale) * 10px)`。
 
 ## 原理
 
@@ -136,18 +138,18 @@ module.exports = {
 };
 ```
 
-| 选项                  | 默认值                    | 说明                                           |
-| --------------------- | ------------------------- | ---------------------------------------------- |
-| `designWidth`         | `375`                     | 设计稿宽度                                     |
-| `minWidth`            | `320`                     | `clamp()` 的最小视口参考宽度                   |
-| `maxWidth`            | `480`                     | `clamp()` 的最大视口参考宽度                   |
-| `rootFontSize`        | `16`                      | 设计稿宽度下的根字号                           |
-| `max`                 | `1000`                    | 预生成 `0..max` 的裸数字类名                   |
-| `cssVar`              | `--tw-scale`              | 缩放单位 CSS 变量名                            |
-| `viewportFontSizeVar` | `--tw-viewport-font-size` | 视口根字号 CSS 变量名                          |
-| `includeClamp`        | `true`                    | 是否为支持的浏览器生成 `clamp()` 限制          |
-| `scopeSelector`       | `null`                    | 局部启用选择器；设置后不再覆盖全局 `html` 字号 |
-| `scaleCoreUtilities` | `false` | 是否让 Tailwind 默认 `size-7` / `text-base` / `rounded-lg` 等 token 也跟随缩放 |
+| 选项                  | 默认值                    | 说明                                                                           |
+| --------------------- | ------------------------- | ------------------------------------------------------------------------------ |
+| `designWidth`         | `375`                     | 设计稿宽度                                                                     |
+| `minWidth`            | `320`                     | `clamp()` 的最小视口参考宽度                                                   |
+| `maxWidth`            | `480`                     | `clamp()` 的最大视口参考宽度                                                   |
+| `rootFontSize`        | `16`                      | 设计稿宽度下的根字号                                                           |
+| `max`                 | `812`                     | 预生成 `0..max` 的裸数字类名                                                   |
+| `cssVar`              | `--tw-scale`              | 缩放单位 CSS 变量名                                                            |
+| `viewportFontSizeVar` | `--tw-viewport-font-size` | 视口根字号 CSS 变量名                                                          |
+| `includeClamp`        | `true`                    | 是否为支持的浏览器生成 `clamp()` 限制                                          |
+| `scopeSelector`       | `null`                    | 局部启用选择器；设置后不再覆盖全局 `html` 字号                                 |
+| `scaleCoreUtilities`  | `false`                   | 是否让 Tailwind 默认 `size-7` / `text-base` / `rounded-lg` 等 token 也跟随缩放 |
 
 ### 局部启用
 
@@ -172,16 +174,16 @@ plugins: [
 
 局部模式下 `--tw-scale` 会在该 scope 内按视口宽度生成长度变量，所以不会依赖全局 `html` 的 `font-size`。
 
-如果开启 `scaleCoreUtilities`，Tailwind 默认 spacing、fontSize、borderRadius、borderWidth token 会改成带 fallback 的变量表达式：
+如果开启 `scaleCoreUtilities`，Tailwind 默认 spacing、fontSize、borderRadius、borderWidth token 会改成变量表达式：
 
 ```css
 .size-7 {
-  width: calc(var(--tw-scale, 0.0625rem) * 28);
-  height: calc(var(--tw-scale, 0.0625rem) * 28);
+  width: calc(var(--tw-scale) * 28);
+  height: calc(var(--tw-scale) * 28);
 }
 ```
 
-在 `.tw-scale-scope` 内会使用响应式 `--tw-scale`；scope 外没有该变量时会回退到原始 Tailwind rem 表现，所以不会强制影响其他页面。
+在 `.tw-scale-scope` 内会使用响应式 `--tw-scale`；scope 外没有该变量时不会生效；需要把默认工具类用在 `scopeSelector` 覆盖的节点内。
 
 ## 许可证
 

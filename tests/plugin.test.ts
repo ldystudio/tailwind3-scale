@@ -92,11 +92,47 @@ describe("tailwind3Scale plugin", () => {
             })
         );
 
-        expect(css).toContain("width: calc(var(--tw-scale, 0.0625rem) * 28)");
-        expect(css).toContain("height: calc(var(--tw-scale, 0.0625rem) * 28)");
-        expect(css).toContain("font-size: calc(var(--tw-scale, 0.0625rem) * 16)");
-        expect(css).toContain("line-height: calc(var(--tw-scale, 0.0625rem) * 24)");
-        expect(css).toContain("border-radius: calc(var(--tw-scale, 0.0625rem) * 8)");
-        expect(css).toContain("border-width: calc(var(--tw-scale, 0.0625rem) * 2)");
+        expect(css).toContain("width: calc(var(--tw-scale) * 28)");
+        expect(css).toContain("height: calc(var(--tw-scale) * 28)");
+        expect(css).toContain("font-size: calc(var(--tw-scale) * 16)");
+        expect(css).toContain("line-height: calc(var(--tw-scale) * 24)");
+        expect(css).toContain("border-radius: calc(var(--tw-scale) * 8)");
+        expect(css).toContain("border-width: calc(var(--tw-scale) * 2)");
+    });
+
+    test("scaleCoreUtilities 不重复生成 Tailwind 默认工具类", async () => {
+        const css = await buildCss(
+            "tw-scale-scope ml-5 -right-3",
+            tailwind3Scale({
+                scopeSelector: ".tw-scale-scope",
+                scaleCoreUtilities: true,
+            })
+        );
+
+        expect(css.match(/\.ml-5\b/g) ?? []).toHaveLength(1);
+        expect(css.match(/\.-right-3\b/g) ?? []).toHaveLength(1);
+        expect(css.match(/\.right-3\b/g) ?? []).toHaveLength(0);
+        expect(css).toContain("margin-left: calc(var(--tw-scale) * 20)");
+        expect(css).toContain("right: calc(calc(var(--tw-scale) * 12) * -1)");
+    });
+
+    test("scaleCoreUtilities 在 twrnc 运行时暴露 Tailwind 默认工具类", () => {
+        const addedUtilities: Record<string, Record<string, string>> = {};
+        const pluginEntry = tailwind3Scale({
+            scopeSelector: ".tw-scale-scope",
+            scaleCoreUtilities: true,
+        });
+
+        pluginEntry.handler({
+            addBase: () => {},
+            addUtilities: (utilities: Record<string, Record<string, string>>) => {
+                Object.assign(addedUtilities, utilities);
+            },
+            matchUtilities: () => {},
+            postcss: null,
+        });
+
+        expect(addedUtilities[".w-2"]).toEqual({ width: "calc(var(--tw-scale) * 8)" });
+        expect(addedUtilities[".ml-5"]).toEqual({ marginLeft: "calc(var(--tw-scale) * 20)" });
     });
 });
