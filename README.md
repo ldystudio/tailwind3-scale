@@ -42,18 +42,21 @@ module.exports = {
 对于需要在 JavaScript 中动态设置缩放值的场景，可以导入 `scale` 函数：
 
 ```js
-const { scale } = require("tailwind3-scale/js");
+const { scale, scaleInt } = require("tailwind3-scale/js");
 
 scale(100); // "calc(var(--tw-scale) * 100)"
 scale(-20); // "calc(var(--tw-scale) * -20)"
 scale(0); // "0"
 scale(100, "--my-scale"); // "calc(var(--my-scale) * 100)"
+
+scaleInt(100); // 100，返回当前视口下与 scale(100) 等效的整数 px
+scaleInt(100, { viewportWidth: 390 }); // 104
 ```
 
 ESM 也支持：
 
 ```js
-import { scale } from "tailwind3-scale/js";
+import { scale, scaleInt } from "tailwind3-scale/js";
 ```
 
 ## 工具类说明

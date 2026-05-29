@@ -1,6 +1,6 @@
 {
   "name": "tailwind3-scale",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "description": "Tailwind CSS v3 移动端适配插件，基于设计稿像素的等比缩放方案，兼容 iOS 13",
   "keywords": [
     "tailwindcss",
